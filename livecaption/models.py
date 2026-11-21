@@ -33,3 +33,21 @@ def resolve_audiotee(explicit: str | None) -> str:
         "    bash scripts/build_audiotee.sh\n"
         "or pass an existing binary path with --audiotee."
     )
+
+
+def resolve_apple_asr(explicit: str | None = None) -> str:
+    """Locate the apple-asr bridge (--asr-model apple): explicit > project ./bin > PATH."""
+    candidates: list[str] = []
+    if explicit:
+        candidates.append(explicit)
+    candidates.append(str(_PROJECT_ROOT / "bin" / "apple-asr"))
+    found = shutil.which("apple-asr")
+    if found:
+        candidates.append(found)
+    for c in candidates:
+        if c and Path(c).is_file() and os.access(c, os.X_OK):
+            return c
+    raise FileNotFoundError(
+        "apple-asr binary not found. --asr-model apple needs it (macOS 26+); build it first:\n"
+        "    bash scripts/build_apple_asr.sh"
+    )

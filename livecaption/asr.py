@@ -956,6 +956,14 @@ class AsrWorker(threading.Thread):
                     segments = ev[1]
                     utterance_samples = ev[2] if len(ev) > 2 else 0
                     ts = started_at
+                    # Backends whose final carries an exact utterance start (apple: word time
+                    # ranges) override the first-partial estimate in audio-timestamp mode.
+                    if self.use_audio_timestamps and getattr(
+                        stream, "exact_final_start", False
+                    ):
+                        ts = self._audio_timestamp(samples_seen, utterance_samples)
+                        if last_final_ts is not None:
+                            ts = max(ts, last_final_ts)
                     if ts is None:
                         ts = (
                             self._audio_timestamp(samples_seen, utterance_samples)

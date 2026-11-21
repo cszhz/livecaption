@@ -50,6 +50,7 @@ class AsrModel(StrEnum):
     qwen3_1_7b_8bit = "qwen3-1.7b-8bit"
     qwen3_0_6b = "qwen3-0.6b"
     qwen3_0_6b_8bit = "qwen3-0.6b-8bit"
+    apple = "apple"
 
 
 class MtModel(StrEnum):
@@ -102,7 +103,8 @@ def main(
         rich_help_panel="ASR",
         help="Engine auto-derived from the choice. English: nemotron-0.6b, nemotron-0.6b-8bit. "
         "Chinese (needs the \\[qwen] extra): qwen3-1.7b, qwen3-1.7b-8bit, qwen3-0.6b, "
-        "qwen3-0.6b-8bit",
+        "qwen3-0.6b-8bit. Apple on-device SpeechTranscriber (macOS 26+, needs "
+        "scripts/build_apple_asr.sh): apple",
     ),
     asr_lang: str = typer.Option(
         config.ASR_LANGUAGE, "--asr-lang", rich_help_panel="ASR",
@@ -239,12 +241,23 @@ def main(
                 asr_model_id, asr_lang, diarize, diarize and word_diarize,
                 log=lambda m: console.print(f"[dim]{m}[/dim]"),
             )
+        elif backend_name == "apple":
+            from .asr_apple import build_apple_recognizer
+
+            if diarize:
+                console.print(
+                    "[dim]Note: apple diarization is utterance-level (one speaker per "
+                    "sentence).[/dim]"
+                )
+            recognizer = build_apple_recognizer(
+                asr_lang, diarize, log=lambda m: console.print(f"[dim]{m}[/dim]"),
+            )
         else:
             recognizer = build_recognizer(
                 asr_model_id, asr_lang, diarize,
                 log=lambda m: console.print(f"[dim]{m}[/dim]"),
             )
-    except (ValueError, ImportError) as e:
+    except (ValueError, ImportError, FileNotFoundError, RuntimeError) as e:
         console.print(f"[red]{e}[/red]")
         raise typer.Exit(1) from None
     except KeyboardInterrupt:

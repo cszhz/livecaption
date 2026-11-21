@@ -10,6 +10,9 @@ from __future__ import annotations
 # derives the engine from the chosen alias -- there is no separate --asr-backend (see cli.py).
 #   nemotron: mlx-audio streaming transducer (English-strong, live word partials + diarization)
 #   qwen3:    Qwen3-ASR via the optional `mlx-qwen3-asr` package (strong Chinese; install [qwen])
+#   apple:    Apple on-device SpeechAnalyzer/SpeechTranscriber (macOS 26+; system speech asset,
+#             not an HF repo -- the id below is informational). Runs outside MLX via the
+#             ./bin/apple-asr bridge (build with scripts/build_apple_asr.sh); see asr_apple.py.
 # The qwen3 *-8bit entries are our own conversions; the mlx-community/Qwen3-ASR-*-8bit repos use
 # mlx-audio's layer naming and do NOT load in mlx-qwen3-asr.
 ASR_MODELS: dict[str, tuple[str, str]] = {
@@ -19,8 +22,13 @@ ASR_MODELS: dict[str, tuple[str, str]] = {
     "qwen3-1.7b-8bit":    ("qwen3", "Six666/mlx-qwen3-asr-1.7b-8bit"),
     "qwen3-0.6b":         ("qwen3", "Qwen/Qwen3-ASR-0.6B"),
     "qwen3-0.6b-8bit":    ("qwen3", "Six666/mlx-qwen3-asr-0.6b-8bit"),
+    "apple":              ("apple", "com.apple.SpeechTranscriber"),
 }
 DEFAULT_ASR_MODEL_ALIAS = "nemotron-0.6b"
+
+# ---- apple engine (SpeechTranscriber) ----
+# .fastResults: lower partial latency at a small accuracy cost. Volatile partials are already on.
+APPLE_ASR_FAST_RESULTS = False
 
 # Translation: Hy-MT2 (Tencent Hunyuan MT, 3rd gen). 1.8B-8bit ~2GB (default); the 7B builds
 # (~4.2GB) translate more accurately. Alias -> HF repo id.
